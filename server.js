@@ -302,6 +302,15 @@ function formatDate(date) {
     return `${day}-${month}-${year}`;
 }
 
+// Global error handler
+app.use((err, req, res, next) => {
+    console.error('Server Error:', err);
+    res.status(500).json({
+        success: false,
+        message: err.message || 'Internal Server Error'
+    });
+});
+
 // Serve the main app
 app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'index.html'));

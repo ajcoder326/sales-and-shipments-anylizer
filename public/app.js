@@ -414,14 +414,36 @@ function bulkUpload() {
     const endpoint = uploadedFileData ? '/api/upload/bulk' : '/api/upload/csv';
     const body = uploadedFileData ? { platform, data: uploadedFileData } : { platform, csvData };
     fetch(endpoint, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
-        .then(res => res.json())
+        .then(async res => {
+            const text = await res.text();
+            let result;
+            try {
+                result = JSON.parse(text);
+            } catch (e) {
+                console.error("Non-JSON Response received:", text);
+                throw new Error("Server Error: " + (text.length > 200 ? text.substring(0, 200) + "..." : text).replace(/<[^>]*>?/gm, ' '));
+            }
+            return result;
+        })
         .then(result => {
             hideLoading();
             document.getElementById('uploadProgress').style.display = 'none';
-            if (result.success) { showToast(result.message, 'success'); clearUploadedFile(); loadFilterOptions(); const resultDiv = document.getElementById('uploadResult'); resultDiv.innerHTML = `<div class="success-message"><i class="fas fa-check-circle"></i> ${result.message}</div>`; resultDiv.style.display = 'block'; setTimeout(() => { resultDiv.style.display = 'none'; }, 5000); }
+            if (result.success) {
+                showToast(result.message, 'success');
+                clearUploadedFile();
+                loadFilterOptions();
+                const resultDiv = document.getElementById('uploadResult');
+                resultDiv.innerHTML = `<div class="success-message"><i class="fas fa-check-circle"></i> ${result.message}</div>`;
+                resultDiv.style.display = 'block';
+                setTimeout(() => { resultDiv.style.display = 'none'; }, 5000);
+            }
             else showToast(result.message, 'error');
         })
-        .catch(error => { hideLoading(); document.getElementById('uploadProgress').style.display = 'none'; handleError(error); });
+        .catch(error => {
+            hideLoading();
+            document.getElementById('uploadProgress').style.display = 'none';
+            handleError(error);
+        });
 }
 
 // ==================== Reports ====================
