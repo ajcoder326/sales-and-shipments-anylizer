@@ -1,0 +1,21 @@
+# Dependencies
+node_modules/
+
+# Database (Keep local data local!)
+sales_data.db
+*.db-journal
+
+# Configuration & Secrets
+ngrok.exe
+ngrok_domain.config
+.env
+
+# System & IDE
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# Logs
+npm-debug.log*
+*.log

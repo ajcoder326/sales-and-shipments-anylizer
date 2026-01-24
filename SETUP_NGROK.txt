@@ -1,0 +1,35 @@
+===================================================================
+                  HOW TO SETUP NGROK (One Time Setup)
+===================================================================
+
+To allow other people to access your local server, you need "ngrok".
+Follow these simple steps:
+
+STEP 1: DOWNLOAD
+-----------------
+1. Go to: https://ngrok.com/download
+2. Create a free account (if you don't have one).
+3. Download the "Windows" version (it will be a ZIP file).
+
+STEP 2: INSTALL
+-----------------
+1. Open the downloaded ZIP file.
+2. You will see a file named "ngrok.exe".
+3. Copy "ngrok.exe" and paste it INTO THIS FOLDER.
+   (The same folder where 'run_app.bat' is located).
+
+STEP 3: AUTHENTICATE (Optional but Recommended)
+------------------------------------------------
+If you want sessions to last longer:
+1. Go to your Ngrok Dashboard (on the website).
+2. Copy your "Authtoken" command (looks like: ngrok config add-authtoken 25sW...)
+3. Open a terminal in this folder and paste that command.
+
+STEP 4: RUN
+------------
+1. Now simply double-click "run_app.bat".
+2. It will automatically find ngrok and start the tunnel.
+3. Look for the remote URL in the green/black window (e.g., https://xyz.ngrok-free.app).
+4. Share that URL with others!
+
+===================================================================
