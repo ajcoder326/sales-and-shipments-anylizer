@@ -77,11 +77,12 @@ function initYearDropdowns() {
     const currentYear = new Date().getFullYear();
     const years = [];
     for (let y = currentYear + 1; y >= currentYear - 5; y--) years.push(y);
-    const yearSelects = ['searchYear', 'searchMonthYear', 'reportYear', 'reportMonthYear', 'recordYear', 'editYear', 'searchStartYear', 'searchEndYear', 'reportStartYear', 'reportEndYear'];
+    const yearSelects = ['searchYear', 'searchMonthYear', 'reportYear', 'reportMonthYear', 'recordYear', 'editYear', 'searchStartYear', 'searchEndYear', 'reportStartYear', 'reportEndYear', 'adminYearFilter'];
     yearSelects.forEach(id => {
         const select = document.getElementById(id);
         if (select) {
-            select.innerHTML = '<option value="">Select Year</option>';
+            const firstOptionText = id === 'adminYearFilter' ? 'All Years' : 'Select Year';
+            select.innerHTML = `<option value="">${firstOptionText}</option>`;
             years.forEach(year => {
                 const option = document.createElement('option');
                 option.value = year;
@@ -168,6 +169,12 @@ function initEventListeners() {
     document.getElementById('cancelEdit').addEventListener('click', closeEditModal);
     document.getElementById('editRecordForm').addEventListener('submit', saveEditedRecord);
     document.getElementById('editModal').addEventListener('click', function (e) { if (e.target === this) closeEditModal(); });
+
+    // Page size change listener
+    const pageSizeSelect = document.getElementById('searchPageSize');
+    if (pageSizeSelect) {
+        pageSizeSelect.addEventListener('change', changePageSize);
+    }
 }
 
 // ==================== API Functions ====================
@@ -175,11 +182,11 @@ function loadPlatformDropdowns() {
     fetch('/api/platforms')
         .then(res => res.json())
         .then(platforms => {
-            const dropdowns = ['recordPlatform', 'bulkPlatform', 'platformFilter', 'reportPlatform', 'dataPlatformFilter'];
+            const dropdowns = ['recordPlatform', 'bulkPlatform', 'platformFilter', 'reportPlatform', 'dataPlatformFilter', 'adminPlatformFilter'];
             dropdowns.forEach(id => {
                 const select = document.getElementById(id);
                 if (select) {
-                    if (id === 'platformFilter' || id === 'reportPlatform' || id === 'dataPlatformFilter') {
+                    if (id === 'platformFilter' || id === 'reportPlatform' || id === 'dataPlatformFilter' || id === 'adminPlatformFilter') {
                         const firstOption = select.options[0];
                         select.innerHTML = '';
                         select.appendChild(firstOption);
@@ -280,9 +287,24 @@ function performSearch() {
     const hasFilter = query || platform !== 'All' || bundleId !== 'All' || parentEan !== 'All' || criteria.month || criteria.year || criteria.startYear || criteria.endYear;
     if (!hasFilter) { showToast('Please enter a search query or select filters', 'warning'); return; }
     showLoading();
-    fetch('/api/search', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(criteria) })
+    // Add pagination params with dynamic page size
+    const page = window.searchPage || 1;
+    const limit = parseInt(document.getElementById('searchPageSize')?.value) || 200;
+    fetch(`/api/search?page=${page}&limit=${limit}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(criteria)
+    })
         .then(res => res.json())
-        .then(results => { searchResults = results; displaySearchResults(results); hideLoading(); })
+        .then(response => {
+            searchResults = response.results;
+            displaySearchResults(response.results, response.total, response.page, response.limit);
+            // Store for pagination
+            window.searchTotal = response.total;
+            window.searchPage = response.page;
+            window.searchLimit = response.limit;
+            hideLoading();
+        })
         .catch(error => { hideLoading(); handleError(error); });
 }
 
@@ -293,7 +315,8 @@ function addDateFilters(criteria, page) {
         case 'month':
             const month = document.getElementById(prefix + 'Month').value;
             const monthYear = document.getElementById(prefix + 'MonthYear').value;
-            if (month && monthYear) { criteria.month = month; criteria.year = monthYear; }
+            if (month) criteria.month = month;
+            if (monthYear) criteria.year = monthYear;
             break;
         case 'year':
             const year = document.getElementById(prefix + 'Year').value;
@@ -309,12 +332,12 @@ function addDateFilters(criteria, page) {
     }
 }
 
-function displaySearchResults(results) {
+function displaySearchResults(results, total, page, limit) {
     const container = document.getElementById('searchResultsBody');
     const card = document.getElementById('searchResultsCard');
     const countSpan = document.getElementById('resultCount');
     const summaryDiv = document.getElementById('searchSummary');
-    countSpan.textContent = results.length;
+    countSpan.textContent = total || results.length;
     card.style.display = 'block';
     let totalUnits = 0;
     const platforms = {};
@@ -327,12 +350,66 @@ function displaySearchResults(results) {
         const bundleId = row['Bundle ID'];
         if (bundleId) bundles[bundleId] = true;
     });
-    summaryDiv.innerHTML = `<div class="summary-item"><h4>${formatNumber(results.length)}</h4><p>Records Found</p></div><div class="summary-item"><h4>${formatNumber(totalUnits)}</h4><p>Total Shipped Units</p></div><div class="summary-item"><h4>${Object.keys(bundles).length}</h4><p>Unique Bundles</p></div><div class="summary-item"><h4>${Object.keys(platforms).length}</h4><p>Platforms</p></div>`;
+    summaryDiv.innerHTML = `<div class="summary-item"><h4>${formatNumber(total || results.length)}</h4><p>Records Found</p></div><div class="summary-item"><h4>${formatNumber(totalUnits)}</h4><p>Total Shipped Units</p></div><div class="summary-item"><h4>${Object.keys(bundles).length}</h4><p>Unique Bundles</p></div><div class="summary-item"><h4>${Object.keys(platforms).length}</h4><p>Platforms</p></div>`;
     let html = '';
     results.forEach(row => {
         html += `<tr><td>${escapeHtml(row.Platform || '')}</td><td>${escapeHtml(row['Platform ID'] || '')}</td><td>${escapeHtml(row['Bundle ID'] || '')}</td><td>${escapeHtml(row['Parent EAN'] || '')}</td><td>${escapeHtml(row['Product Name'] || '')}</td><td>${row['Shipped Units'] || 0}</td><td>${getMonthName(row['Month'])}</td><td>${row['Year'] || ''}</td></tr>`;
     });
     container.innerHTML = html || '<tr><td colspan="8" style="text-align: center;">No results found</td></tr>';
+
+    // Render pagination controls
+    renderSearchPagination(total, page, limit);
+}
+
+function renderSearchPagination(total, page, limit) {
+    const pagination = document.getElementById('searchPagination');
+    const paginationInfo = document.getElementById('paginationInfo');
+    if (!pagination) return;
+
+    const totalPages = Math.ceil((total || 0) / (limit || 200));
+    const startRecord = ((page - 1) * limit) + 1;
+    const endRecord = Math.min(page * limit, total);
+
+    // Update pagination info
+    if (paginationInfo) {
+        paginationInfo.textContent = `Showing ${formatNumber(startRecord)}-${formatNumber(endRecord)} of ${formatNumber(total)}`;
+    }
+
+    let html = '';
+    if (totalPages > 1) {
+        // First and Prev buttons
+        html += `<button class="prev-btn" onclick="changeSearchPage(1)" ${page === 1 ? 'disabled' : ''} title="First Page">«</button>`;
+        html += `<button class="prev-btn" onclick="changeSearchPage(${page - 1})" ${page === 1 ? 'disabled' : ''}>‹ Prev</button>`;
+
+        // Page numbers
+        for (let i = 1; i <= totalPages; i++) {
+            if (i === 1 || i === totalPages || (i >= page - 2 && i <= page + 2)) {
+                html += `<button onclick="changeSearchPage(${i})" class="${i === page ? 'active' : ''}">${i}</button>`;
+            } else if (i === page - 3 || i === page + 3) {
+                html += `<button disabled>...</button>`;
+            }
+        }
+
+        // Next and Last buttons
+        html += `<button class="next-btn" onclick="changeSearchPage(${page + 1})" ${page === totalPages ? 'disabled' : ''}>Next ›</button>`;
+        html += `<button class="next-btn" onclick="changeSearchPage(${totalPages})" ${page === totalPages ? 'disabled' : ''} title="Last Page">»</button>`;
+    }
+    pagination.innerHTML = html;
+}
+
+function changeSearchPage(newPage) {
+    if (newPage < 1) return;
+    const total = window.searchTotal || 0;
+    const limit = parseInt(document.getElementById('searchPageSize')?.value) || 200;
+    const totalPages = Math.ceil(total / limit);
+    if (newPage > totalPages) return;
+    window.searchPage = newPage;
+    performSearch();
+}
+
+function changePageSize() {
+    window.searchPage = 1; // Reset to first page when changing page size
+    performSearch();
 }
 
 function quickSearch(query) {
@@ -373,28 +450,112 @@ function handleFileUpload(e) { const file = e.target.files[0]; if (file) handleD
 
 function handleDroppedFile(file) {
     if (!file) return;
+
+    // Show extraction progress
+    showExtractionProgress(0, 'Reading file...');
+
     const reader = new FileReader();
-    reader.onload = function (e) {
-        let content = e.target.result;
-        let dataArray = [];
-        if (file.name.endsWith('.xlsx') || file.name.endsWith('.xls')) {
-            const workbook = XLSX.read(content, { type: 'binary' });
-            const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
-            dataArray = XLSX.utils.sheet_to_json(firstSheet, { header: 1 });
-            document.getElementById('csvData').value = XLSX.utils.sheet_to_csv(firstSheet);
-        } else {
-            document.getElementById('csvData').value = content;
-            dataArray = content.split('\n').map(row => row.split(',').map(cell => cell.trim()));
+
+    reader.onprogress = function (e) {
+        if (e.lengthComputable) {
+            const percent = Math.round((e.loaded / e.total) * 30); // Reading is 0-30%
+            updateExtractionProgress(percent, 'Reading file data...');
         }
-        uploadedFileData = dataArray;
-        const recordCount = dataArray.length > 0 ? dataArray.length - 1 : 0;
-        document.getElementById('fileName').textContent = file.name;
-        document.getElementById('recordCount').textContent = `${recordCount} records detected`;
-        document.getElementById('filePreview').style.display = 'block';
-        showToast(`File "${file.name}" loaded - ${recordCount} records ready to upload`, 'success');
     };
+
+    reader.onload = function (e) {
+        updateExtractionProgress(35, 'Parsing file structure...');
+
+        // Use setTimeout to allow UI to update
+        setTimeout(() => {
+            let content = e.target.result;
+            let dataArray = [];
+
+            try {
+                if (file.name.endsWith('.xlsx') || file.name.endsWith('.xls')) {
+                    updateExtractionProgress(45, 'Reading Excel workbook...');
+
+                    setTimeout(() => {
+                        const workbook = XLSX.read(content, { type: 'binary' });
+                        updateExtractionProgress(60, 'Extracting sheet data...');
+
+                        setTimeout(() => {
+                            const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+                            updateExtractionProgress(75, 'Converting to table format...');
+
+                            setTimeout(() => {
+                                dataArray = XLSX.utils.sheet_to_json(firstSheet, { header: 1 });
+                                updateExtractionProgress(90, 'Preparing preview...');
+
+                                setTimeout(() => {
+                                    document.getElementById('csvData').value = XLSX.utils.sheet_to_csv(firstSheet);
+                                    finalizeFileLoad(file, dataArray);
+                                }, 100);
+                            }, 100);
+                        }, 100);
+                    }, 100);
+                } else {
+                    updateExtractionProgress(60, 'Parsing CSV data...');
+                    setTimeout(() => {
+                        document.getElementById('csvData').value = content;
+                        dataArray = content.split('\n').map(row => row.split(',').map(cell => cell.trim()));
+                        updateExtractionProgress(90, 'Preparing preview...');
+                        setTimeout(() => {
+                            finalizeFileLoad(file, dataArray);
+                        }, 100);
+                    }, 100);
+                }
+            } catch (error) {
+                hideExtractionProgress();
+                showToast('Error reading file: ' + error.message, 'error');
+            }
+        }, 50);
+    };
+
+    reader.onerror = function () {
+        hideExtractionProgress();
+        showToast('Error reading file', 'error');
+    };
+
     if (file.name.endsWith('.csv')) reader.readAsText(file);
     else reader.readAsBinaryString(file);
+}
+
+function finalizeFileLoad(file, dataArray) {
+    uploadedFileData = dataArray;
+    const recordCount = dataArray.length > 0 ? dataArray.length - 1 : 0;
+    document.getElementById('fileName').textContent = file.name;
+    document.getElementById('recordCount').textContent = `${formatNumber(recordCount)} records detected`;
+    document.getElementById('filePreview').style.display = 'block';
+
+    updateExtractionProgress(100, 'Complete!');
+    setTimeout(() => {
+        hideExtractionProgress();
+        showToast(`File "${file.name}" loaded - ${formatNumber(recordCount)} records ready to upload`, 'success');
+    }, 500);
+}
+
+function showExtractionProgress(percent, status) {
+    const overlay = document.getElementById('uploadProgressOverlay');
+    const title = overlay.querySelector('h3');
+    title.innerHTML = '<i class="fas fa-file-excel"></i> Extracting Data';
+    overlay.classList.add('show');
+    updateExtractionProgress(percent, status);
+}
+
+function updateExtractionProgress(percent, status) {
+    document.getElementById('uploadProgressBar').style.width = percent + '%';
+    document.getElementById('uploadProgressPercent').textContent = percent + '%';
+    document.getElementById('uploadProgressRecords').textContent = '';
+    document.getElementById('uploadProgressStatus').textContent = status;
+    document.getElementById('uploadEstimatedTime').textContent = percent < 100 ? 'Processing...' : 'Done!';
+}
+
+function hideExtractionProgress() {
+    const overlay = document.getElementById('uploadProgressOverlay');
+    const title = overlay.querySelector('h3');
+    title.innerHTML = '<i class="fas fa-cloud-upload-alt"></i> Uploading Data';
+    overlay.classList.remove('show');
 }
 
 function clearUploadedFile() {
@@ -409,42 +570,116 @@ function bulkUpload() {
     const csvData = document.getElementById('csvData').value;
     if (!platform) { showToast('Please select a platform first', 'warning'); return; }
     if (!csvData.trim() && !uploadedFileData) { showToast('Please upload a file or paste CSV data', 'warning'); return; }
-    showLoading();
-    document.getElementById('uploadProgress').style.display = 'block';
+
+    const totalRecords = uploadedFileData ? uploadedFileData.length - 1 : csvData.trim().split('\n').length - 1;
+
+    // Show progress overlay
+    showUploadProgress(0, totalRecords, 'Preparing upload...');
+
     const endpoint = uploadedFileData ? '/api/upload/bulk' : '/api/upload/csv';
     const body = uploadedFileData ? { platform, data: uploadedFileData } : { platform, csvData };
-    fetch(endpoint, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
-        .then(async res => {
-            const text = await res.text();
-            let result;
-            try {
-                result = JSON.parse(text);
-            } catch (e) {
-                console.error("Non-JSON Response received:", text);
-                throw new Error("Server Error: " + (text.length > 200 ? text.substring(0, 200) + "..." : text).replace(/<[^>]*>?/gm, ' '));
+
+    const startTime = Date.now();
+
+    // Use XMLHttpRequest for progress tracking
+    const xhr = new XMLHttpRequest();
+    xhr.open('POST', endpoint, true);
+    xhr.setRequestHeader('Content-Type', 'application/json');
+
+    xhr.upload.onprogress = function (e) {
+        if (e.lengthComputable) {
+            const percent = Math.round((e.loaded / e.total) * 50); // Upload is 50% of work
+            const elapsed = (Date.now() - startTime) / 1000;
+            const estimatedTotal = (elapsed / (percent / 100)) - elapsed;
+            updateUploadProgress(percent, Math.round(totalRecords * percent / 100), totalRecords, 'Uploading data to server...', estimatedTotal);
+        }
+    };
+
+    xhr.onreadystatechange = function () {
+        if (xhr.readyState === 4) {
+            if (xhr.status === 200) {
+                let result;
+                try {
+                    result = JSON.parse(xhr.responseText);
+                } catch (e) {
+                    hideUploadProgress();
+                    showToast('Server returned invalid response', 'error');
+                    return;
+                }
+
+                // Simulate processing progress (50-100%)
+                simulateProcessingProgress(50, 100, totalRecords, function () {
+                    hideUploadProgress();
+                    if (result.success) {
+                        showToast(result.message, 'success');
+                        clearUploadedFile();
+                        loadPlatformDropdowns();
+                        const resultDiv = document.getElementById('uploadResult');
+                        resultDiv.innerHTML = `<div class="success-message"><i class="fas fa-check-circle"></i> ${result.message}</div>`;
+                        resultDiv.style.display = 'block';
+                        setTimeout(() => { resultDiv.style.display = 'none'; }, 5000);
+                    } else {
+                        showToast(result.message, 'error');
+                    }
+                });
+            } else {
+                hideUploadProgress();
+                showToast('Upload failed: ' + xhr.statusText, 'error');
             }
-            return result;
-        })
-        .then(result => {
-            hideLoading();
-            document.getElementById('uploadProgress').style.display = 'none';
-            if (result.success) {
-                showToast(result.message, 'success');
-                clearUploadedFile();
-                loadFilterOptions();
-                const resultDiv = document.getElementById('uploadResult');
-                resultDiv.innerHTML = `<div class="success-message"><i class="fas fa-check-circle"></i> ${result.message}</div>`;
-                resultDiv.style.display = 'block';
-                setTimeout(() => { resultDiv.style.display = 'none'; }, 5000);
-            }
-            else showToast(result.message, 'error');
-        })
-        .catch(error => {
-            hideLoading();
-            document.getElementById('uploadProgress').style.display = 'none';
-            handleError(error);
-        });
+        }
+    };
+
+    xhr.onerror = function () {
+        hideUploadProgress();
+        showToast('Network error during upload', 'error');
+    };
+
+    xhr.send(JSON.stringify(body));
 }
+
+function showUploadProgress(percent, current, total, status) {
+    const overlay = document.getElementById('uploadProgressOverlay');
+    overlay.classList.add('show');
+    updateUploadProgress(percent, current, total, status, 0);
+}
+
+function updateUploadProgress(percent, current, total, status, estimatedSeconds) {
+    document.getElementById('uploadProgressBar').style.width = percent + '%';
+    document.getElementById('uploadProgressPercent').textContent = percent + '%';
+    document.getElementById('uploadProgressRecords').textContent = `${formatNumber(current)} / ${formatNumber(total)} records`;
+    document.getElementById('uploadProgressStatus').textContent = status;
+
+    if (estimatedSeconds > 0) {
+        const mins = Math.floor(estimatedSeconds / 60);
+        const secs = Math.round(estimatedSeconds % 60);
+        const timeStr = mins > 0 ? `${mins}m ${secs}s remaining` : `${secs}s remaining`;
+        document.getElementById('uploadEstimatedTime').textContent = timeStr;
+    } else if (percent >= 100) {
+        document.getElementById('uploadEstimatedTime').textContent = 'Completing...';
+    } else {
+        document.getElementById('uploadEstimatedTime').textContent = 'Calculating...';
+    }
+}
+
+function hideUploadProgress() {
+    document.getElementById('uploadProgressOverlay').classList.remove('show');
+}
+
+function simulateProcessingProgress(fromPercent, toPercent, totalRecords, callback) {
+    let current = fromPercent;
+    const step = (toPercent - fromPercent) / 20;
+    const interval = setInterval(() => {
+        current += step;
+        if (current >= toPercent) {
+            current = toPercent;
+            clearInterval(interval);
+            setTimeout(callback, 300);
+        }
+        const recordsProcessed = Math.round(totalRecords * current / 100);
+        updateUploadProgress(Math.round(current), recordsProcessed, totalRecords, 'Processing records...', 0);
+    }, 100);
+}
+
 
 // ==================== Reports ====================
 function previewReport() {
@@ -515,51 +750,56 @@ function exportToCSV(data, filename) {
 // ==================== All Data Page ====================
 function loadAllData() {
     showLoading();
-    fetch('/api/data')
+    const page = window.allDataPage || 1;
+    const limit = 25;
+    const platform = document.getElementById('dataPlatformFilter')?.value || 'All';
+    fetch(`/api/data?page=${page}&limit=${limit}&platform=${encodeURIComponent(platform)}`)
         .then(res => res.json())
-        .then(data => { allData = data; filterAllData(); hideLoading(); })
+        .then(data => {
+            allData = data.results;
+            window.allDataTotal = data.total;
+            window.allDataPage = data.page;
+            window.allDataLimit = data.limit;
+            renderAllDataTable(allData, data.total, data.page, data.limit);
+            hideLoading();
+        })
         .catch(error => { hideLoading(); handleError(error); });
 }
 
 function filterAllData() {
-    const platform = document.getElementById('dataPlatformFilter').value;
-    let filteredData = allData;
-    if (platform !== 'All') filteredData = allData.filter(row => row.Platform === platform);
-    currentPage = 1;
-    renderAllDataTable(filteredData);
+    window.allDataPage = 1;
+    loadAllData();
 }
 
 function renderAllDataTable(data) {
     const tbody = document.getElementById('allDataBody');
     const pagination = document.getElementById('dataPagination');
-    const totalPages = Math.ceil(data.length / itemsPerPage);
-    const startIndex = (currentPage - 1) * itemsPerPage;
-    const endIndex = startIndex + itemsPerPage;
-    const pageData = data.slice(startIndex, endIndex);
+    const totalPages = Math.ceil((window.allDataTotal || 0) / (window.allDataLimit || 25));
+    const page = window.allDataPage || 1;
     let html = '';
-    pageData.forEach(row => {
+    (data || []).forEach(row => {
         const rowData = JSON.stringify(row).replace(/'/g, "\\'").replace(/"/g, '&quot;');
         html += `<tr><td>${escapeHtml(row.Platform || '')}</td><td>${escapeHtml(row['Platform ID'] || '')}</td><td>${escapeHtml(row['Bundle ID'] || '')}</td><td>${escapeHtml(row['Parent EAN'] || '')}</td><td>${escapeHtml(row['Product Name'] || '')}</td><td>${row['Shipped Units'] || 0}</td><td>${getMonthName(row['Month'])}</td><td>${row['Year'] || ''}</td><td class="actions"><button class="btn-edit" onclick='editRecord(${row.id}, ${rowData})'><i class="fas fa-edit"></i></button><button class="btn-delete" onclick="deleteRecord(${row.id})"><i class="fas fa-trash"></i></button></td></tr>`;
     });
     tbody.innerHTML = html || '<tr><td colspan="9" style="text-align: center;">No data found</td></tr>';
     let paginationHtml = '';
     if (totalPages > 1) {
-        paginationHtml += `<button onclick="changePage(${currentPage - 1})" ${currentPage === 1 ? 'disabled' : ''}>‹ Prev</button>`;
+        paginationHtml += `<button onclick="changePage(${page - 1})" ${page === 1 ? 'disabled' : ''}>‹ Prev</button>`;
         for (let i = 1; i <= totalPages; i++) {
-            if (i === 1 || i === totalPages || (i >= currentPage - 2 && i <= currentPage + 2)) paginationHtml += `<button onclick="changePage(${i})" class="${i === currentPage ? 'active' : ''}">${i}</button>`;
-            else if (i === currentPage - 3 || i === currentPage + 3) paginationHtml += `<button disabled>...</button>`;
+            if (i === 1 || i === totalPages || (i >= page - 2 && i <= page + 2)) paginationHtml += `<button onclick="changePage(${i})" class="${i === page ? 'active' : ''}">${i}</button>`;
+            else if (i === page - 3 || i === page + 3) paginationHtml += `<button disabled>...</button>`;
         }
-        paginationHtml += `<button onclick="changePage(${currentPage + 1})" ${currentPage === totalPages ? 'disabled' : ''}>Next ›</button>`;
+        paginationHtml += `<button onclick="changePage(${page + 1})" ${page === totalPages ? 'disabled' : ''}>Next ›</button>`;
     }
     pagination.innerHTML = paginationHtml;
 }
 
 function changePage(page) {
-    const platform = document.getElementById('dataPlatformFilter').value;
-    let filteredData = allData;
-    if (platform !== 'All') filteredData = allData.filter(row => row.Platform === platform);
-    const totalPages = Math.ceil(filteredData.length / itemsPerPage);
-    if (page >= 1 && page <= totalPages) { currentPage = page; renderAllDataTable(filteredData); }
+    const totalPages = Math.ceil((window.allDataTotal || 0) / (window.allDataLimit || 25));
+    if (page >= 1 && page <= totalPages) {
+        window.allDataPage = page;
+        loadAllData();
+    }
 }
 
 // ==================== Edit/Delete Functions ====================
@@ -621,3 +861,197 @@ function showToast(message, type = 'success') {
     setTimeout(() => { toast.classList.remove('show'); }, 3000);
 }
 function handleError(error) { console.error('Error:', error); showToast('An error occurred: ' + (error.message || error), 'error'); }
+
+// ==================== Admin Panel Functions ====================
+let deletePreviewData = [];
+
+function loadAdminFilters() {
+    fetch('/api/filters')
+        .then(res => res.json())
+        .then(data => {
+            // Populate platform filter
+            const platformSelect = document.getElementById('adminPlatformFilter');
+            if (platformSelect) {
+                platformSelect.innerHTML = '<option value="">All Platforms</option>';
+                data.platforms.forEach(p => {
+                    platformSelect.innerHTML += `<option value="${escapeHtml(p)}">${escapeHtml(p)}</option>`;
+                });
+            }
+            // Populate year filter
+            const yearSelect = document.getElementById('adminYearFilter');
+            if (yearSelect) {
+                yearSelect.innerHTML = '<option value="">All Years</option>';
+                data.years.forEach(y => {
+                    yearSelect.innerHTML += `<option value="${y}">${y}</option>`;
+                });
+            }
+        });
+}
+
+function previewDeleteRecords() {
+    const platform = document.getElementById('adminPlatformFilter').value;
+    const month = document.getElementById('adminMonthFilter').value;
+    const year = document.getElementById('adminYearFilter').value;
+
+    showLoading();
+    fetch('/api/admin/preview-delete', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ platform, month, year })
+    })
+        .then(res => res.json())
+        .then(data => {
+            hideLoading();
+            if (data.success) {
+                deletePreviewData = data.records;
+                const tbody = document.getElementById('deletePreviewBody');
+                document.getElementById('deleteRecordCount').textContent = data.count;
+
+                if (data.count === 0) {
+                    tbody.innerHTML = '<tr><td colspan="7" style="text-align: center;">No records match the selected filters</td></tr>';
+                    document.getElementById('deleteFilteredBtn').style.display = 'none';
+                } else {
+                    let html = '';
+                    // Show max 100 rows in preview
+                    const preview = data.records.slice(0, 100);
+                    preview.forEach(row => {
+                        html += `<tr>
+                        <td>${escapeHtml(row.Platform)}</td>
+                        <td>${escapeHtml(row['Platform ID'])}</td>
+                        <td>${escapeHtml(row['Bundle ID'])}</td>
+                        <td>${escapeHtml(row['Product Name'])}</td>
+                        <td>${formatNumber(row['Shipped Units'])}</td>
+                        <td>${getMonthName(row['Month'])}</td>
+                        <td>${row['Year']}</td>
+                    </tr>`;
+                    });
+                    if (data.count > 100) {
+                        html += `<tr><td colspan="7" style="text-align: center; color: #6c757d;">... and ${data.count - 100} more records</td></tr>`;
+                    }
+                    tbody.innerHTML = html;
+                    document.getElementById('deleteFilteredBtn').style.display = 'inline-flex';
+                }
+                document.getElementById('deletePreviewSection').style.display = 'block';
+                document.getElementById('cancelDeleteBtn').style.display = 'inline-flex';
+            } else {
+                showToast(data.message || 'Error loading preview', 'error');
+            }
+        })
+        .catch(error => { hideLoading(); handleError(error); });
+}
+
+function deleteFilteredRecords() {
+    const platform = document.getElementById('adminPlatformFilter').value;
+    const month = document.getElementById('adminMonthFilter').value;
+    const year = document.getElementById('adminYearFilter').value;
+    const count = document.getElementById('deleteRecordCount').textContent;
+
+    let filterDesc = [];
+    if (platform) filterDesc.push(`Platform: ${platform}`);
+    if (month) filterDesc.push(`Month: ${getMonthName(month)}`);
+    if (year) filterDesc.push(`Year: ${year}`);
+    const filterText = filterDesc.length > 0 ? filterDesc.join(', ') : 'ALL matching records';
+
+    if (!confirm(`⚠️ WARNING: You are about to DELETE ${count} records!\n\nFilters: ${filterText}\n\nThis action CANNOT be undone. Are you sure?`)) return;
+    if (!confirm(`🔴 FINAL CONFIRMATION: Delete ${count} records permanently?`)) return;
+
+    showLoading();
+    fetch('/api/admin/delete-filtered', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ platform, month, year })
+    })
+        .then(res => res.json())
+        .then(result => {
+            hideLoading();
+            if (result.success) {
+                showToast(result.message, 'success');
+                cancelDeletePreview();
+                loadFilterOptions();
+                loadDashboard();
+            } else {
+                showToast(result.message || 'Delete failed', 'error');
+            }
+        })
+        .catch(error => { hideLoading(); handleError(error); });
+}
+
+function deleteAllData() {
+    fetch('/api/dashboard')
+        .then(res => res.json())
+        .then(data => {
+            const totalRecords = data.totalRecords || 0;
+            if (totalRecords === 0) {
+                showToast('No data to delete', 'warning');
+                return;
+            }
+            if (!confirm(`⚠️ DANGER: You are about to DELETE ALL ${totalRecords} records from the database!\n\nThis action CANNOT be undone.\n\nAre you absolutely sure?`)) return;
+            if (!confirm(`🔴 FINAL CONFIRMATION: Permanently delete all ${totalRecords} records?`)) return;
+
+            showLoading();
+            fetch('/api/admin/delete-all', { method: 'DELETE' })
+                .then(res => res.json())
+                .then(result => {
+                    hideLoading();
+                    if (result.success) {
+                        showToast(result.message, 'success');
+                        cancelDeletePreview();
+                        loadFilterOptions();
+                        loadDashboard();
+                    } else {
+                        showToast(result.message || 'Delete failed', 'error');
+                    }
+                })
+                .catch(error => { hideLoading(); handleError(error); });
+        });
+}
+
+function cancelDeletePreview() {
+    document.getElementById('deletePreviewSection').style.display = 'none';
+    document.getElementById('deleteFilteredBtn').style.display = 'none';
+    document.getElementById('cancelDeleteBtn').style.display = 'none';
+    document.getElementById('deletePreviewBody').innerHTML = '';
+    deletePreviewData = [];
+}
+
+// Admin event listeners
+document.addEventListener('DOMContentLoaded', function () {
+    const previewBtn = document.getElementById('previewDeleteBtn');
+    if (previewBtn) previewBtn.addEventListener('click', previewDeleteRecords);
+
+    const deleteFilteredBtn = document.getElementById('deleteFilteredBtn');
+    if (deleteFilteredBtn) deleteFilteredBtn.addEventListener('click', deleteFilteredRecords);
+
+    const deleteAllBtn = document.getElementById('deleteAllBtn');
+    if (deleteAllBtn) deleteAllBtn.addEventListener('click', deleteAllData);
+
+    const cancelBtn = document.getElementById('cancelDeleteBtn');
+    if (cancelBtn) cancelBtn.addEventListener('click', cancelDeletePreview);
+
+    const backupBtn = document.getElementById('backupDatabaseBtn');
+    if (backupBtn) backupBtn.addEventListener('click', backupDatabase);
+});
+
+function backupDatabase() {
+    showToast('Preparing database backup...', 'success');
+
+    // Create hidden download link
+    const link = document.createElement('a');
+    link.href = '/api/admin/backup';
+    link.style.display = 'none';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+
+    // Update last backup info
+    const now = new Date();
+    const timeStr = now.toLocaleString();
+    const infoSpan = document.getElementById('lastBackupInfo');
+    if (infoSpan) {
+        infoSpan.innerHTML = `<i class="fas fa-check-circle" style="color: #4caf50;"></i> Last backup: ${timeStr}`;
+    }
+
+    setTimeout(() => {
+        showToast('Database backup download started!', 'success');
+    }, 500);
+}

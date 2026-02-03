@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <base target="_top">
   <meta charset="UTF-8">
@@ -10,12 +11,15 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
   <link rel="stylesheet" href="styles.css">
 </head>
+
 <body>
   <!-- Login Screen -->
   <div class="login-screen" id="loginScreen">
     <div class="login-container">
       <div class="login-logo">
-        <img src="https://www.kuberindustries.co.in/uploads/kuberindustries/images/kuber-logo-with-tagline-1012174414423707_header_logo.png" alt="Kuber Industries">
+        <img
+          src="https://www.kuberindustries.co.in/uploads/kuberindustries/images/kuber-logo-with-tagline-1012174414423707_header_logo.png"
+          alt="Kuber Industries">
       </div>
       <h2>Sales Analyzer</h2>
       <p class="login-subtitle">Sign in to continue</p>
@@ -39,16 +43,25 @@
   <nav class="sidebar" id="sidebar" style="display: none;">
     <div class="sidebar-header">
       <div class="logo">
-        <img src="https://www.kuberindustries.co.in/uploads/kuberindustries/images/kuber-logo-with-tagline-1012174414423707_header_logo.png" alt="Kuber Industries" class="logo-img">
+        <img
+          src="https://www.kuberindustries.co.in/uploads/kuberindustries/images/kuber-logo-with-tagline-1012174414423707_header_logo.png"
+          alt="Kuber Industries" class="logo-img">
       </div>
       <button class="toggle-btn" id="toggleSidebar"><i class="fas fa-bars"></i></button>
     </div>
     <ul class="nav-menu">
-      <li class="nav-item active" data-page="dashboard"><a href="#" class="nav-link"><i class="fas fa-chart-line"></i><span>Dashboard</span></a></li>
-      <li class="nav-item" data-page="search"><a href="#" class="nav-link"><i class="fas fa-search"></i><span>Search & Analyze</span></a></li>
-      <li class="nav-item" data-page="upload"><a href="#" class="nav-link"><i class="fas fa-upload"></i><span>Upload Records</span></a></li>
-      <li class="nav-item" data-page="reports"><a href="#" class="nav-link"><i class="fas fa-file-excel"></i><span>Reports & Export</span></a></li>
-      <li class="nav-item" data-page="data"><a href="#" class="nav-link"><i class="fas fa-database"></i><span>View All Data</span></a></li>
+      <li class="nav-item active" data-page="dashboard"><a href="#" class="nav-link"><i
+            class="fas fa-chart-line"></i><span>Dashboard</span></a></li>
+      <li class="nav-item" data-page="search"><a href="#" class="nav-link"><i class="fas fa-search"></i><span>Search &
+            Analyze</span></a></li>
+      <li class="nav-item" data-page="upload"><a href="#" class="nav-link"><i class="fas fa-upload"></i><span>Upload
+            Records</span></a></li>
+      <li class="nav-item" data-page="reports"><a href="#" class="nav-link"><i
+            class="fas fa-file-excel"></i><span>Reports & Export</span></a></li>
+      <li class="nav-item" data-page="data"><a href="#" class="nav-link"><i class="fas fa-database"></i><span>View All
+            Data</span></a></li>
+      <li class="nav-item" data-page="admin"><a href="#" class="nav-link"><i class="fas fa-cog"></i><span>Admin
+            Panel</span></a></li>
     </ul>
   </nav>
 
@@ -73,31 +86,79 @@
       <!-- Dashboard Page -->
       <section class="page active" id="dashboardPage">
         <div class="stats-grid">
-          <div class="stat-card"><div class="stat-icon blue"><i class="fas fa-truck"></i></div><div class="stat-info"><h3 id="totalShippedUnits">0</h3><p>Total Shipped Units</p></div></div>
-          <div class="stat-card"><div class="stat-icon green"><i class="fas fa-file-alt"></i></div><div class="stat-info"><h3 id="totalRecords">0</h3><p>Total Records</p></div></div>
-          <div class="stat-card"><div class="stat-icon orange"><i class="fas fa-boxes"></i></div><div class="stat-info"><h3 id="bundleCount">0</h3><p>Unique Bundles</p></div></div>
-          <div class="stat-card"><div class="stat-icon purple"><i class="fas fa-layer-group"></i></div><div class="stat-info"><h3 id="platformCount">0</h3><p>Active Platforms</p></div></div>
+          <div class="stat-card">
+            <div class="stat-icon blue"><i class="fas fa-truck"></i></div>
+            <div class="stat-info">
+              <h3 id="totalShippedUnits">0</h3>
+              <p>Total Shipped Units</p>
+            </div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon green"><i class="fas fa-file-alt"></i></div>
+            <div class="stat-info">
+              <h3 id="totalRecords">0</h3>
+              <p>Total Records</p>
+            </div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon orange"><i class="fas fa-boxes"></i></div>
+            <div class="stat-info">
+              <h3 id="bundleCount">0</h3>
+              <p>Unique Bundles</p>
+            </div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon purple"><i class="fas fa-layer-group"></i></div>
+            <div class="stat-info">
+              <h3 id="platformCount">0</h3>
+              <p>Active Platforms</p>
+            </div>
+          </div>
         </div>
         <div class="dashboard-grid">
-          <div class="card"><div class="card-header"><h2><i class="fas fa-chart-pie"></i> Platform Wise Shipments</h2></div><div class="card-body"><div id="platformChart" class="chart-container"></div><div id="platformStats" class="platform-stats"></div></div></div>
-          <div class="card"><div class="card-header"><h2><i class="fas fa-trophy"></i> Top Products (by Parent EAN)</h2></div><div class="card-body"><div id="topProducts" class="top-products-list"></div></div></div>
+          <div class="card">
+            <div class="card-header">
+              <h2><i class="fas fa-chart-pie"></i> Platform Wise Shipments</h2>
+            </div>
+            <div class="card-body">
+              <div id="platformChart" class="chart-container"></div>
+              <div id="platformStats" class="platform-stats"></div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-header">
+              <h2><i class="fas fa-trophy"></i> Top Products (by Parent EAN)</h2>
+            </div>
+            <div class="card-body">
+              <div id="topProducts" class="top-products-list"></div>
+            </div>
+          </div>
         </div>
       </section>
 
       <!-- Search Page -->
       <section class="page" id="searchPage">
         <div class="card">
-          <div class="card-header"><h2><i class="fas fa-search"></i> Search & Analyze Sales</h2></div>
+          <div class="card-header">
+            <h2><i class="fas fa-search"></i> Search & Analyze Sales</h2>
+          </div>
           <div class="card-body">
             <div class="search-box">
               <div class="search-input-group">
-                <input type="text" id="mainSearchInput" placeholder="Search by Product Name, Bundle ID, Parent EAN, or Platform ID...">
+                <input type="text" id="mainSearchInput"
+                  placeholder="Search by Product Name, Bundle ID, Parent EAN, or Platform ID...">
                 <button class="btn btn-primary" id="searchBtn"><i class="fas fa-search"></i> Search</button>
               </div>
               <div class="search-filters">
-                <select id="platformFilter"><option value="All">All Platforms</option></select>
-                <select id="bundleIdFilter"><option value="All">All Bundle IDs</option></select>
-                <select id="parentEanFilter"><option value="All">All Parent EANs</option></select>
+                <select id="platformFilter">
+                  <option value="All">All Platforms</option>
+                </select>
+                <select id="bundleIdFilter">
+                  <option value="All">All Bundle IDs</option>
+                </select>
+                <select id="parentEanFilter">
+                  <option value="All">All Parent EANs</option>
+                </select>
               </div>
               <div class="date-filter-section">
                 <h4><i class="fas fa-calendar-alt"></i> Date Filters</h4>
@@ -110,16 +171,58 @@
                 <div class="date-filter-options">
                   <div class="date-option" id="dateFilterMonth" style="display: none;">
                     <div class="form-row">
-                      <div class="form-group"><label>Month</label><select id="searchMonth"><option value="">Select Month</option><option value="1">January</option><option value="2">February</option><option value="3">March</option><option value="4">April</option><option value="5">May</option><option value="6">June</option><option value="7">July</option><option value="8">August</option><option value="9">September</option><option value="10">October</option><option value="11">November</option><option value="12">December</option></select></div>
+                      <div class="form-group"><label>Month</label><select id="searchMonth">
+                          <option value="">Select Month</option>
+                          <option value="1">January</option>
+                          <option value="2">February</option>
+                          <option value="3">March</option>
+                          <option value="4">April</option>
+                          <option value="5">May</option>
+                          <option value="6">June</option>
+                          <option value="7">July</option>
+                          <option value="8">August</option>
+                          <option value="9">September</option>
+                          <option value="10">October</option>
+                          <option value="11">November</option>
+                          <option value="12">December</option>
+                        </select></div>
                       <div class="form-group"><label>Year</label><select id="searchMonthYear"></select></div>
                     </div>
                   </div>
-                  <div class="date-option" id="dateFilterYear" style="display: none;"><div class="form-group"><label>Year</label><select id="searchYear"></select></div></div>
+                  <div class="date-option" id="dateFilterYear" style="display: none;">
+                    <div class="form-group"><label>Year</label><select id="searchYear"></select></div>
+                  </div>
                   <div class="date-option" id="dateFilterRange" style="display: none;">
                     <div class="form-row">
-                      <div class="form-group"><label>From Month</label><select id="searchStartMonth"><option value="1">January</option><option value="2">February</option><option value="3">March</option><option value="4">April</option><option value="5">May</option><option value="6">June</option><option value="7">July</option><option value="8">August</option><option value="9">September</option><option value="10">October</option><option value="11">November</option><option value="12">December</option></select></div>
+                      <div class="form-group"><label>From Month</label><select id="searchStartMonth">
+                          <option value="1">January</option>
+                          <option value="2">February</option>
+                          <option value="3">March</option>
+                          <option value="4">April</option>
+                          <option value="5">May</option>
+                          <option value="6">June</option>
+                          <option value="7">July</option>
+                          <option value="8">August</option>
+                          <option value="9">September</option>
+                          <option value="10">October</option>
+                          <option value="11">November</option>
+                          <option value="12">December</option>
+                        </select></div>
                       <div class="form-group"><label>From Year</label><select id="searchStartYear"></select></div>
-                      <div class="form-group"><label>To Month</label><select id="searchEndMonth"><option value="1">January</option><option value="2">February</option><option value="3">March</option><option value="4">April</option><option value="5">May</option><option value="6">June</option><option value="7">July</option><option value="8">August</option><option value="9">September</option><option value="10">October</option><option value="11">November</option><option value="12">December</option></select></div>
+                      <div class="form-group"><label>To Month</label><select id="searchEndMonth">
+                          <option value="1">January</option>
+                          <option value="2">February</option>
+                          <option value="3">March</option>
+                          <option value="4">April</option>
+                          <option value="5">May</option>
+                          <option value="6">June</option>
+                          <option value="7">July</option>
+                          <option value="8">August</option>
+                          <option value="9">September</option>
+                          <option value="10">October</option>
+                          <option value="11">November</option>
+                          <option value="12">December</option>
+                        </select></div>
                       <div class="form-group"><label>To Year</label><select id="searchEndYear"></select></div>
                     </div>
                   </div>
@@ -129,14 +232,44 @@
           </div>
         </div>
         <div class="card" id="searchResultsCard" style="display: none;">
-          <div class="card-header"><h2><i class="fas fa-list"></i> Search Results (<span id="resultCount">0</span>)</h2><button class="btn btn-success" id="exportSearchResults"><i class="fas fa-download"></i> Export to Excel</button></div>
+          <div class="card-header">
+            <h2><i class="fas fa-list"></i> Search Results (<span id="resultCount">0</span>)</h2><button
+              class="btn btn-success" id="exportSearchResults"><i class="fas fa-download"></i> Export to Excel</button>
+          </div>
           <div class="card-body">
             <div id="searchSummary" class="search-summary"></div>
             <div class="table-responsive">
               <table class="data-table" id="searchResultsTable">
-                <thead><tr><th>Platform</th><th>Platform ID</th><th>Bundle ID</th><th>Parent EAN</th><th>Product Name</th><th>Shipped Units</th><th>Month</th><th>Year</th></tr></thead>
+                <thead>
+                  <tr>
+                    <th>Platform</th>
+                    <th>Platform ID</th>
+                    <th>Bundle ID</th>
+                    <th>Parent EAN</th>
+                    <th>Product Name</th>
+                    <th>Shipped Units</th>
+                    <th>Month</th>
+                    <th>Year</th>
+                  </tr>
+                </thead>
                 <tbody id="searchResultsBody"></tbody>
               </table>
+            </div>
+            <div class="pagination-controls">
+              <div class="pagination-info">
+                <span>Show</span>
+                <select id="searchPageSize" class="page-size-select">
+                  <option value="25">25</option>
+                  <option value="50">50</option>
+                  <option value="100">100</option>
+                  <option value="200" selected>200</option>
+                  <option value="500">500</option>
+                  <option value="1000">1000</option>
+                </select>
+                <span>per page</span>
+                <span class="pagination-text" id="paginationInfo">Showing 1-200 of 0</span>
+              </div>
+              <div class="pagination" id="searchPagination"></div>
             </div>
           </div>
         </div>
@@ -146,21 +279,44 @@
       <section class="page" id="uploadPage">
         <div class="upload-grid">
           <div class="card">
-            <div class="card-header"><h2><i class="fas fa-plus-circle"></i> Add Single Record</h2></div>
+            <div class="card-header">
+              <h2><i class="fas fa-plus-circle"></i> Add Single Record</h2>
+            </div>
             <div class="card-body">
               <form id="singleRecordForm">
-                <div class="form-group"><label>Platform</label><select id="recordPlatform" required><option value="">Select Platform</option></select></div>
+                <div class="form-group"><label>Platform</label><select id="recordPlatform" required>
+                    <option value="">Select Platform</option>
+                  </select></div>
                 <div class="form-row">
-                  <div class="form-group"><label>Platform ID</label><input type="text" id="recordPlatformId" placeholder="Platform's Unique ID" required></div>
-                  <div class="form-group"><label>Bundle ID</label><input type="text" id="recordBundleId" placeholder="Kuber Bundle ID" required></div>
+                  <div class="form-group"><label>Platform ID</label><input type="text" id="recordPlatformId"
+                      placeholder="Platform's Unique ID" required></div>
+                  <div class="form-group"><label>Bundle ID</label><input type="text" id="recordBundleId"
+                      placeholder="Kuber Bundle ID" required></div>
                 </div>
                 <div class="form-row">
-                  <div class="form-group"><label>Parent EAN</label><input type="text" id="recordParentEan" placeholder="Parent EAN" required></div>
-                  <div class="form-group"><label>Product Name</label><input type="text" id="recordProductName" placeholder="Product Name" required></div>
+                  <div class="form-group"><label>Parent EAN</label><input type="text" id="recordParentEan"
+                      placeholder="Parent EAN" required></div>
+                  <div class="form-group"><label>Product Name</label><input type="text" id="recordProductName"
+                      placeholder="Product Name" required></div>
                 </div>
                 <div class="form-row">
-                  <div class="form-group"><label>Shipped Units</label><input type="number" id="recordShippedUnits" value="1" min="0" required></div>
-                  <div class="form-group"><label>Month</label><select id="recordMonth" required><option value="">Select Month</option><option value="1">January</option><option value="2">February</option><option value="3">March</option><option value="4">April</option><option value="5">May</option><option value="6">June</option><option value="7">July</option><option value="8">August</option><option value="9">September</option><option value="10">October</option><option value="11">November</option><option value="12">December</option></select></div>
+                  <div class="form-group"><label>Shipped Units</label><input type="number" id="recordShippedUnits"
+                      value="1" min="0" required></div>
+                  <div class="form-group"><label>Month</label><select id="recordMonth" required>
+                      <option value="">Select Month</option>
+                      <option value="1">January</option>
+                      <option value="2">February</option>
+                      <option value="3">March</option>
+                      <option value="4">April</option>
+                      <option value="5">May</option>
+                      <option value="6">June</option>
+                      <option value="7">July</option>
+                      <option value="8">August</option>
+                      <option value="9">September</option>
+                      <option value="10">October</option>
+                      <option value="11">November</option>
+                      <option value="12">December</option>
+                    </select></div>
                   <div class="form-group"><label>Year</label><select id="recordYear" required></select></div>
                 </div>
                 <button type="submit" class="btn btn-primary btn-block"><i class="fas fa-save"></i> Save Record</button>
@@ -168,19 +324,45 @@
             </div>
           </div>
           <div class="card">
-            <div class="card-header"><h2><i class="fas fa-file-upload"></i> Upload Platform Sheet</h2></div>
+            <div class="card-header">
+              <h2><i class="fas fa-file-upload"></i> Upload Platform Sheet</h2>
+            </div>
             <div class="card-body">
               <div class="format-info-box">
                 <h4><i class="fas fa-info-circle"></i> Required Excel/CSV Format</h4>
                 <div class="format-table">
                   <table class="format-preview-table">
-                    <thead><tr><th>Platform ID</th><th>Bundle ID</th><th>Parent EAN</th><th>Product Name</th><th>Shipped Units</th><th>Month</th><th>Year</th></tr></thead>
-                    <tbody><tr><td>B0ABC123</td><td>KI-BDL-001</td><td>8901234567890</td><td>Storage Box</td><td>50</td><td>1</td><td>2026</td></tr></tbody>
+                    <thead>
+                      <tr>
+                        <th>Platform ID</th>
+                        <th>Bundle ID</th>
+                        <th>Parent EAN</th>
+                        <th>Product Name</th>
+                        <th>Shipped Units</th>
+                        <th>Month</th>
+                        <th>Year</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr>
+                        <td>B0ABC123</td>
+                        <td>KI-BDL-001</td>
+                        <td>8901234567890</td>
+                        <td>Storage Box</td>
+                        <td>50</td>
+                        <td>1</td>
+                        <td>2026</td>
+                      </tr>
+                    </tbody>
                   </table>
                 </div>
-                <p class="format-note"><i class="fas fa-calendar"></i> Month: <strong>1-12</strong> (1=January, 12=December) | Year: <strong>YYYY</strong></p>
+                <p class="format-note"><i class="fas fa-calendar"></i> Month: <strong>1-12</strong> (1=January,
+                  12=December) | Year: <strong>YYYY</strong></p>
               </div>
-              <div class="form-group"><label><strong>Step 1:</strong> Select Platform</label><select id="bulkPlatform" class="platform-select"><option value="">-- Select Platform --</option></select></div>
+              <div class="form-group"><label><strong>Step 1:</strong> Select Platform</label><select id="bulkPlatform"
+                  class="platform-select">
+                  <option value="">-- Select Platform --</option>
+                </select></div>
               <div class="form-group"><label><strong>Step 2:</strong> Upload Excel/CSV File</label></div>
               <div class="upload-area" id="uploadArea">
                 <i class="fas fa-cloud-upload-alt"></i>
@@ -189,12 +371,21 @@
                 <input type="file" id="fileInput" accept=".csv,.xlsx,.xls" hidden>
               </div>
               <div id="filePreview" class="file-preview" style="display: none;">
-                <div class="file-info"><i class="fas fa-file-excel"></i><span id="fileName">filename.xlsx</span><button type="button" class="btn-remove-file" id="removeFile">&times;</button></div>
+                <div class="file-info"><i class="fas fa-file-excel"></i><span id="fileName">filename.xlsx</span><button
+                    type="button" class="btn-remove-file" id="removeFile">&times;</button></div>
                 <p id="recordCount">0 records detected</p>
               </div>
-              <div class="form-group"><label>Or Paste CSV Data:</label><textarea id="csvData" rows="4" placeholder="Platform ID, Bundle ID, Parent EAN, Product Name, Shipped Units, Month, Year"></textarea></div>
-              <button class="btn btn-primary btn-block" id="bulkUploadBtn"><i class="fas fa-upload"></i> Upload to Platform Sheet</button>
-              <div id="uploadProgress" class="upload-progress" style="display: none;"><div class="progress-bar"><div class="progress-fill"></div></div><p class="progress-text">Uploading...</p></div>
+              <div class="form-group"><label>Or Paste CSV Data:</label><textarea id="csvData" rows="4"
+                  placeholder="Platform ID, Bundle ID, Parent EAN, Product Name, Shipped Units, Month, Year"></textarea>
+              </div>
+              <button class="btn btn-primary btn-block" id="bulkUploadBtn"><i class="fas fa-upload"></i> Upload to
+                Platform Sheet</button>
+              <div id="uploadProgress" class="upload-progress" style="display: none;">
+                <div class="progress-bar">
+                  <div class="progress-fill"></div>
+                </div>
+                <p class="progress-text">Uploading...</p>
+              </div>
               <div id="uploadResult" class="upload-result" style="display: none;"></div>
             </div>
           </div>
@@ -204,14 +395,21 @@
       <!-- Reports Page -->
       <section class="page" id="reportsPage">
         <div class="card">
-          <div class="card-header"><h2><i class="fas fa-file-excel"></i> Generate & Download Reports</h2></div>
+          <div class="card-header">
+            <h2><i class="fas fa-file-excel"></i> Generate & Download Reports</h2>
+          </div>
           <div class="card-body">
             <div class="report-filters">
               <div class="form-row">
-                <div class="form-group"><label>Platform</label><select id="reportPlatform"><option value="All">All Platforms</option></select></div>
-                <div class="form-group"><label>Bundle ID</label><select id="reportBundleId"><option value="All">All Bundle IDs</option></select></div>
+                <div class="form-group"><label>Platform</label><select id="reportPlatform">
+                    <option value="All">All Platforms</option>
+                  </select></div>
+                <div class="form-group"><label>Bundle ID</label><select id="reportBundleId">
+                    <option value="All">All Bundle IDs</option>
+                  </select></div>
               </div>
-              <div class="form-group"><label>Search Query (Optional)</label><input type="text" id="reportQuery" placeholder="Filter by Product, Bundle ID, Parent EAN..."></div>
+              <div class="form-group"><label>Search Query (Optional)</label><input type="text" id="reportQuery"
+                  placeholder="Filter by Product, Bundle ID, Parent EAN..."></div>
               <div class="date-filter-section">
                 <h4><i class="fas fa-calendar-alt"></i> Date Filters</h4>
                 <div class="date-filter-tabs" id="reportDateTabs">
@@ -223,16 +421,58 @@
                 <div class="date-filter-options" id="reportDateOptions">
                   <div class="date-option" id="reportDateFilterMonth" style="display: none;">
                     <div class="form-row">
-                      <div class="form-group"><label>Month</label><select id="reportMonth"><option value="">Select Month</option><option value="1">January</option><option value="2">February</option><option value="3">March</option><option value="4">April</option><option value="5">May</option><option value="6">June</option><option value="7">July</option><option value="8">August</option><option value="9">September</option><option value="10">October</option><option value="11">November</option><option value="12">December</option></select></div>
+                      <div class="form-group"><label>Month</label><select id="reportMonth">
+                          <option value="">Select Month</option>
+                          <option value="1">January</option>
+                          <option value="2">February</option>
+                          <option value="3">March</option>
+                          <option value="4">April</option>
+                          <option value="5">May</option>
+                          <option value="6">June</option>
+                          <option value="7">July</option>
+                          <option value="8">August</option>
+                          <option value="9">September</option>
+                          <option value="10">October</option>
+                          <option value="11">November</option>
+                          <option value="12">December</option>
+                        </select></div>
                       <div class="form-group"><label>Year</label><select id="reportMonthYear"></select></div>
                     </div>
                   </div>
-                  <div class="date-option" id="reportDateFilterYear" style="display: none;"><div class="form-group"><label>Year</label><select id="reportYear"></select></div></div>
+                  <div class="date-option" id="reportDateFilterYear" style="display: none;">
+                    <div class="form-group"><label>Year</label><select id="reportYear"></select></div>
+                  </div>
                   <div class="date-option" id="reportDateFilterRange" style="display: none;">
                     <div class="form-row">
-                      <div class="form-group"><label>From Month</label><select id="reportStartMonth"><option value="1">January</option><option value="2">February</option><option value="3">March</option><option value="4">April</option><option value="5">May</option><option value="6">June</option><option value="7">July</option><option value="8">August</option><option value="9">September</option><option value="10">October</option><option value="11">November</option><option value="12">December</option></select></div>
+                      <div class="form-group"><label>From Month</label><select id="reportStartMonth">
+                          <option value="1">January</option>
+                          <option value="2">February</option>
+                          <option value="3">March</option>
+                          <option value="4">April</option>
+                          <option value="5">May</option>
+                          <option value="6">June</option>
+                          <option value="7">July</option>
+                          <option value="8">August</option>
+                          <option value="9">September</option>
+                          <option value="10">October</option>
+                          <option value="11">November</option>
+                          <option value="12">December</option>
+                        </select></div>
                       <div class="form-group"><label>From Year</label><select id="reportStartYear"></select></div>
-                      <div class="form-group"><label>To Month</label><select id="reportEndMonth"><option value="1">January</option><option value="2">February</option><option value="3">March</option><option value="4">April</option><option value="5">May</option><option value="6">June</option><option value="7">July</option><option value="8">August</option><option value="9">September</option><option value="10">October</option><option value="11">November</option><option value="12">December</option></select></div>
+                      <div class="form-group"><label>To Month</label><select id="reportEndMonth">
+                          <option value="1">January</option>
+                          <option value="2">February</option>
+                          <option value="3">March</option>
+                          <option value="4">April</option>
+                          <option value="5">May</option>
+                          <option value="6">June</option>
+                          <option value="7">July</option>
+                          <option value="8">August</option>
+                          <option value="9">September</option>
+                          <option value="10">October</option>
+                          <option value="11">November</option>
+                          <option value="12">December</option>
+                        </select></div>
                       <div class="form-group"><label>To Year</label><select id="reportEndYear"></select></div>
                     </div>
                   </div>
@@ -241,18 +481,33 @@
             </div>
             <div class="report-actions">
               <button class="btn btn-primary" id="previewReportBtn"><i class="fas fa-eye"></i> Preview Report</button>
-              <button class="btn btn-success" id="downloadExcelBtn"><i class="fas fa-file-excel"></i> Download Excel</button>
-              <button class="btn btn-secondary" id="downloadCsvBtn"><i class="fas fa-file-csv"></i> Download CSV</button>
+              <button class="btn btn-success" id="downloadExcelBtn"><i class="fas fa-file-excel"></i> Download
+                Excel</button>
+              <button class="btn btn-secondary" id="downloadCsvBtn"><i class="fas fa-file-csv"></i> Download
+                CSV</button>
             </div>
           </div>
         </div>
         <div class="card" id="reportPreviewCard" style="display: none;">
-          <div class="card-header"><h2><i class="fas fa-table"></i> Report Preview (<span id="reportCount">0</span> records)</h2></div>
+          <div class="card-header">
+            <h2><i class="fas fa-table"></i> Report Preview (<span id="reportCount">0</span> records)</h2>
+          </div>
           <div class="card-body">
             <div id="reportSummary" class="report-summary"></div>
             <div class="table-responsive">
               <table class="data-table" id="reportTable">
-                <thead><tr><th>Platform</th><th>Platform ID</th><th>Bundle ID</th><th>Parent EAN</th><th>Product Name</th><th>Shipped Units</th><th>Month</th><th>Year</th></tr></thead>
+                <thead>
+                  <tr>
+                    <th>Platform</th>
+                    <th>Platform ID</th>
+                    <th>Bundle ID</th>
+                    <th>Parent EAN</th>
+                    <th>Product Name</th>
+                    <th>Shipped Units</th>
+                    <th>Month</th>
+                    <th>Year</th>
+                  </tr>
+                </thead>
                 <tbody id="reportBody"></tbody>
               </table>
             </div>
@@ -266,14 +521,28 @@
           <div class="card-header">
             <h2><i class="fas fa-database"></i> All Sales Data</h2>
             <div class="header-actions">
-              <select id="dataPlatformFilter"><option value="All">All Platforms</option></select>
+              <select id="dataPlatformFilter">
+                <option value="All">All Platforms</option>
+              </select>
               <button class="btn btn-primary" id="refreshDataBtn"><i class="fas fa-sync-alt"></i> Refresh</button>
             </div>
           </div>
           <div class="card-body">
             <div class="table-responsive">
               <table class="data-table" id="allDataTable">
-                <thead><tr><th>Platform</th><th>Platform ID</th><th>Bundle ID</th><th>Parent EAN</th><th>Product Name</th><th>Shipped Units</th><th>Month</th><th>Year</th><th>Actions</th></tr></thead>
+                <thead>
+                  <tr>
+                    <th>Platform</th>
+                    <th>Platform ID</th>
+                    <th>Bundle ID</th>
+                    <th>Parent EAN</th>
+                    <th>Product Name</th>
+                    <th>Shipped Units</th>
+                    <th>Month</th>
+                    <th>Year</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
                 <tbody id="allDataBody"></tbody>
               </table>
             </div>
@@ -281,16 +550,156 @@
           </div>
         </div>
       </section>
+
+      <!-- Admin Panel Page -->
+      <section class="page" id="adminPage">
+        <div class="card">
+          <div class="card-header">
+            <h2><i class="fas fa-cog"></i> Admin Panel - Data Management</h2>
+          </div>
+          <div class="card-body">
+            <div class="admin-warning"
+              style="background: #fff3cd; border: 1px solid #ffc107; border-radius: 8px; padding: 15px; margin-bottom: 20px;">
+              <i class="fas fa-exclamation-triangle" style="color: #856404;"></i>
+              <strong style="color: #856404;">Warning:</strong>
+              <span style="color: #856404;">Deleting data is permanent and cannot be undone. Please use filters
+                carefully.</span>
+            </div>
+
+            <!-- Database Backup Section -->
+            <div class="backup-section"
+              style="background: #e3f2fd; border: 1px solid #2196f3; border-radius: 8px; padding: 20px; margin-bottom: 25px;">
+              <h3 style="color: #1565c0; margin-bottom: 15px;"><i class="fas fa-database"></i> Database Backup</h3>
+              <p style="color: #1976d2; margin-bottom: 15px;">Download a backup of your database before making any
+                changes. This creates a copy of all your sales data.</p>
+              <div style="display: flex; gap: 15px; align-items: center; flex-wrap: wrap;">
+                <button class="btn btn-primary" id="backupDatabaseBtn">
+                  <i class="fas fa-download"></i> Download Database Backup
+                </button>
+                <span id="lastBackupInfo" style="color: #5f6368; font-size: 13px;"></span>
+              </div>
+            </div>
+
+            <hr style="border: 0; border-top: 2px solid #eee; margin: 25px 0;">
+            <h3 style="color: #d32f2f; margin-bottom: 20px;"><i class="fas fa-trash-alt"></i> Delete Data</h3>
+
+            <div class="filter-section" style="margin-bottom: 25px;">
+              <h3 style="margin-bottom: 15px;"><i class="fas fa-filter"></i> Filter Data to Delete</h3>
+              <div class="form-row">
+                <div class="form-group">
+                  <label>Platform</label>
+                  <select id="adminPlatformFilter">
+                    <option value="">All Platforms</option>
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label>Month</label>
+                  <select id="adminMonthFilter">
+                    <option value="">All Months</option>
+                    <option value="1">January</option>
+                    <option value="2">February</option>
+                    <option value="3">March</option>
+                    <option value="4">April</option>
+                    <option value="5">May</option>
+                    <option value="6">June</option>
+                    <option value="7">July</option>
+                    <option value="8">August</option>
+                    <option value="9">September</option>
+                    <option value="10">October</option>
+                    <option value="11">November</option>
+                    <option value="12">December</option>
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label>Year</label>
+                  <select id="adminYearFilter">
+                    <option value="">All Years</option>
+                  </select>
+                </div>
+              </div>
+              <div class="form-row" style="margin-top: 15px;">
+                <button class="btn btn-primary" id="previewDeleteBtn"><i class="fas fa-eye"></i> Preview Records to
+                  Delete</button>
+              </div>
+            </div>
+
+            <div id="deletePreviewSection" style="display: none;">
+              <div class="card" style="border: 2px solid #dc3545; margin-bottom: 20px;">
+                <div class="card-header" style="background: #f8d7da;">
+                  <h3 style="color: #721c24; margin: 0;"><i class="fas fa-trash-alt"></i> Records to be Deleted: <span
+                      id="deleteRecordCount">0</span></h3>
+                </div>
+                <div class="card-body">
+                  <div class="table-responsive" style="max-height: 300px; overflow-y: auto;">
+                    <table class="data-table" id="deletePreviewTable">
+                      <thead>
+                        <tr>
+                          <th>Platform</th>
+                          <th>Platform ID</th>
+                          <th>Bundle ID</th>
+                          <th>Product Name</th>
+                          <th>Shipped Units</th>
+                          <th>Month</th>
+                          <th>Year</th>
+                        </tr>
+                      </thead>
+                      <tbody id="deletePreviewBody"></tbody>
+                    </table>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="delete-actions" style="display: flex; gap: 15px; flex-wrap: wrap;">
+              <button class="btn btn-danger" id="deleteFilteredBtn" style="display: none;">
+                <i class="fas fa-trash"></i> Delete Filtered Records
+              </button>
+              <button class="btn btn-secondary" id="cancelDeleteBtn" style="display: none;">
+                <i class="fas fa-times"></i> Cancel
+              </button>
+              <div style="border-left: 2px solid #ddd; padding-left: 15px; margin-left: 10px;">
+                <button class="btn" id="deleteAllBtn" style="background: #b71c1c; color: white;">
+                  <i class="fas fa-exclamation-circle"></i> Delete ALL Data
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
     </div>
   </main>
 
-  <div class="loading-overlay" id="loadingOverlay"><div class="spinner"></div><p>Loading...</p></div>
+  <div class="loading-overlay" id="loadingOverlay">
+    <div class="spinner"></div>
+    <p>Loading...</p>
+  </div>
+
+  <!-- Upload Progress Overlay -->
+  <div class="upload-progress-overlay" id="uploadProgressOverlay">
+    <div class="upload-progress-content">
+      <h3><i class="fas fa-cloud-upload-alt"></i> Uploading Data</h3>
+      <div class="progress-bar-container">
+        <div class="progress-bar" id="uploadProgressBar"></div>
+      </div>
+      <div class="progress-stats">
+        <span class="progress-percent" id="uploadProgressPercent">0%</span>
+        <span class="progress-records" id="uploadProgressRecords">0 / 0 records</span>
+      </div>
+      <div class="progress-time">
+        <i class="fas fa-clock"></i> <span id="uploadEstimatedTime">Calculating...</span>
+      </div>
+      <p class="progress-status" id="uploadProgressStatus">Preparing upload...</p>
+    </div>
+  </div>
+
   <div class="toast" id="toast"><i class="fas fa-check-circle"></i><span id="toastMessage">Success!</span></div>
 
   <!-- Edit Modal -->
   <div class="modal" id="editModal">
     <div class="modal-content">
-      <div class="modal-header"><h3><i class="fas fa-edit"></i> Edit Record</h3><button class="modal-close" id="closeEditModal">&times;</button></div>
+      <div class="modal-header">
+        <h3><i class="fas fa-edit"></i> Edit Record</h3><button class="modal-close" id="closeEditModal">&times;</button>
+      </div>
       <div class="modal-body">
         <form id="editRecordForm">
           <input type="hidden" id="editRowIndex">
@@ -304,8 +713,23 @@
             <div class="form-group"><label>Product Name</label><input type="text" id="editProductName" required></div>
           </div>
           <div class="form-row">
-            <div class="form-group"><label>Shipped Units</label><input type="number" id="editShippedUnits" min="0" required></div>
-            <div class="form-group"><label>Month</label><select id="editMonth" required><option value="">Select Month</option><option value="1">January</option><option value="2">February</option><option value="3">March</option><option value="4">April</option><option value="5">May</option><option value="6">June</option><option value="7">July</option><option value="8">August</option><option value="9">September</option><option value="10">October</option><option value="11">November</option><option value="12">December</option></select></div>
+            <div class="form-group"><label>Shipped Units</label><input type="number" id="editShippedUnits" min="0"
+                required></div>
+            <div class="form-group"><label>Month</label><select id="editMonth" required>
+                <option value="">Select Month</option>
+                <option value="1">January</option>
+                <option value="2">February</option>
+                <option value="3">March</option>
+                <option value="4">April</option>
+                <option value="5">May</option>
+                <option value="6">June</option>
+                <option value="7">July</option>
+                <option value="8">August</option>
+                <option value="9">September</option>
+                <option value="10">October</option>
+                <option value="11">November</option>
+                <option value="12">December</option>
+              </select></div>
             <div class="form-group"><label>Year</label><select id="editYear" required></select></div>
           </div>
           <div class="modal-actions">
@@ -317,6 +741,7 @@
     </div>
   </div>
 
-  <script src="app.js"></script>
+  <script src="app.js?v=9"></script>
 </body>
+
 </html>

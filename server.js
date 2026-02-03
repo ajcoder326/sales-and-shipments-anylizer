@@ -19,14 +19,14 @@ const PORT = process.env.PORT || 3000;
 
 // Middleware
 app.use(cors());
-app.use(express.json({ limit: '50mb' }));
-app.use(express.urlencoded({ extended: true, limit: '50mb' }));
+app.use(express.json({ limit: '200mb' }));
+app.use(express.urlencoded({ extended: true, limit: '200mb' }));
 app.use(express.static(path.join(__dirname, 'public')));
 
 // File upload configuration
 const upload = multer({
     storage: multer.memoryStorage(),
-    limits: { fileSize: 50 * 1024 * 1024 } // 50MB limit
+    limits: { fileSize: 200 * 1024 * 1024 } // 200MB limit
 });
 
 // Start server after database is ready
@@ -75,8 +75,10 @@ app.get('/api/filter-options', (req, res) => {
 app.post('/api/search', (req, res) => {
     try {
         const criteria = req.body;
-        const results = db.advancedSearch(criteria);
-        res.json(results);
+        const page = parseInt(req.query.page) || 1;
+        const limit = parseInt(req.query.limit) || 25;
+        const { results, total } = db.advancedSearchPaginated(criteria, page, limit);
+        res.json({ results, total, page, limit });
     } catch (error) {
         res.status(500).json({ error: error.message });
     }
@@ -86,8 +88,10 @@ app.post('/api/search', (req, res) => {
 app.get('/api/data', (req, res) => {
     try {
         const platform = req.query.platform || 'All';
-        const data = db.getAllData(platform);
-        res.json(data);
+        const page = parseInt(req.query.page) || 1;
+        const limit = parseInt(req.query.limit) || 25;
+        const { results, total } = db.getAllDataPaginated(platform, page, limit);
+        res.json({ results, total, page, limit });
     } catch (error) {
         res.status(500).json({ error: error.message });
     }
@@ -172,6 +176,43 @@ function parseFileData(dataArray) {
     const records = [];
     const now = new Date();
 
+    // Month name to number mapping
+    const monthNames = {
+        'january': 1, 'jan': 1,
+        'february': 2, 'feb': 2,
+        'march': 3, 'mar': 3,
+        'april': 4, 'apr': 4,
+        'may': 5,
+        'june': 6, 'jun': 6,
+        'july': 7, 'jul': 7,
+        'august': 8, 'aug': 8,
+        'september': 9, 'sep': 9, 'sept': 9,
+        'october': 10, 'oct': 10,
+        'november': 11, 'nov': 11,
+        'december': 12, 'dec': 12
+    };
+
+    // Helper to parse month value
+    function parseMonth(val) {
+        if (!val && val !== 0) return now.getMonth() + 1;
+
+        // If it's a number already
+        const num = parseInt(val);
+        if (!isNaN(num) && num >= 1 && num <= 12) return num;
+
+        // If it's a month name
+        const str = String(val).toLowerCase().trim();
+        if (monthNames[str]) return monthNames[str];
+
+        // Check if it starts with a month name
+        for (const name in monthNames) {
+            if (str.startsWith(name)) return monthNames[name];
+        }
+
+        // Default to current month
+        return now.getMonth() + 1;
+    }
+
     // Skip header row if present
     const startIndex = (dataArray[0] && String(dataArray[0][0]).toLowerCase().includes('platform')) ? 1 : 0;
 
@@ -184,7 +225,7 @@ function parseFileData(dataArray) {
                 parentEan: String(row[2] || ''),
                 productName: String(row[3] || ''),
                 shippedUnits: parseInt(row[4]) || 0,
-                month: parseInt(row[5]) || (now.getMonth() + 1),
+                month: parseMonth(row[5]),
                 year: parseInt(row[6]) || now.getFullYear()
             });
         }
@@ -284,6 +325,68 @@ app.post('/api/export/csv', (req, res) => {
         res.send(csv);
     } catch (error) {
         res.status(500).json({ error: error.message });
+    }
+});
+
+// Preview records to delete (with filters)
+app.post('/api/admin/preview-delete', (req, res) => {
+    try {
+        const { platform, month, year } = req.body;
+        const criteria = {};
+        if (platform) criteria.platform = platform;
+        if (month) criteria.month = parseInt(month);
+        if (year) criteria.year = parseInt(year);
+
+        // Use search to get matching records
+        const results = db.searchRecords(criteria);
+        res.json({ success: true, records: results.results, count: results.total });
+    } catch (error) {
+        res.status(500).json({ success: false, message: error.message });
+    }
+});
+
+// Delete records by filter
+app.post('/api/admin/delete-filtered', (req, res) => {
+    try {
+        const { platform, month, year } = req.body;
+        const result = db.deleteByFilter(platform, month, year);
+        res.json(result);
+    } catch (error) {
+        res.status(500).json({ success: false, message: error.message });
+    }
+});
+
+// Delete ALL records
+app.delete('/api/admin/delete-all', (req, res) => {
+    try {
+        const result = db.deleteAllRecords();
+        res.json(result);
+    } catch (error) {
+        res.status(500).json({ success: false, message: error.message });
+    }
+});
+
+// Database backup download
+app.get('/api/admin/backup', (req, res) => {
+    try {
+        const dbPath = path.join(__dirname, 'kuber_sales.db');
+        const fs = require('fs');
+
+        if (!fs.existsSync(dbPath)) {
+            return res.status(404).json({ success: false, message: 'Database file not found' });
+        }
+
+        const now = new Date();
+        const timestamp = `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}${String(now.getDate()).padStart(2, '0')}_${String(now.getHours()).padStart(2, '0')}${String(now.getMinutes()).padStart(2, '0')}`;
+        const filename = `KuberSales_Backup_${timestamp}.db`;
+
+        res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+        res.setHeader('Content-Type', 'application/x-sqlite3');
+
+        const fileStream = fs.createReadStream(dbPath);
+        fileStream.pipe(res);
+    } catch (error) {
+        res.status(500).json({ success: false, message: error.message });
     }
 });
 

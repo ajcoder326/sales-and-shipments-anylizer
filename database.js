@@ -1,3 +1,113 @@
+// ==================== Pagination Helpers ====================
+function getAllDataPaginated(platform = 'All', page = 1, limit = 25) {
+  let sql = 'SELECT * FROM sales_records';
+  let params = [];
+  if (platform && platform !== 'All') {
+    sql += ' WHERE platform = ?';
+    params.push(platform);
+  }
+  sql += ' ORDER BY id DESC';
+  // Get total count
+  let countSql = 'SELECT COUNT(*) as total FROM sales_records';
+  let countParams = [];
+  if (platform && platform !== 'All') {
+    countSql += ' WHERE platform = ?';
+    countParams.push(platform);
+  }
+  const total = runQuery(countSql, countParams)[0]?.total || 0;
+  // Pagination
+  sql += ' LIMIT ? OFFSET ?';
+  params.push(limit, (page - 1) * limit);
+  const results = runQuery(sql, params).map(formatRecord);
+  return { results, total };
+}
+
+function advancedSearchPaginated(criteria, page = 1, limit = 25) {
+  let sql = 'SELECT * FROM sales_records WHERE 1=1';
+  const params = [];
+
+  if (criteria.platform && criteria.platform !== 'All') {
+    sql += ' AND platform = ?';
+    params.push(criteria.platform);
+  }
+
+  if (criteria.query) {
+    sql += ` AND (platform_id LIKE ? OR bundle_id LIKE ? OR parent_ean LIKE ? OR product_name LIKE ?)`;
+    const term = `%${criteria.query}%`;
+    params.push(term, term, term, term);
+  }
+
+  if (criteria.bundleId && criteria.bundleId !== 'All') {
+    sql += ' AND bundle_id = ?';
+    params.push(criteria.bundleId);
+  }
+
+  if (criteria.parentEan && criteria.parentEan !== 'All') {
+    sql += ' AND parent_ean = ?';
+    params.push(criteria.parentEan);
+  }
+
+  if (criteria.month && criteria.month !== 'All') {
+    sql += ' AND month = ?';
+    params.push(parseInt(criteria.month));
+  }
+
+  if (criteria.year && criteria.year !== 'All') {
+    sql += ' AND year = ?';
+    params.push(parseInt(criteria.year));
+  }
+
+  if (criteria.startYear && criteria.endYear) {
+    const startMonth = parseInt(criteria.startMonth) || 1;
+    const endMonth = parseInt(criteria.endMonth) || 12;
+    const startYear = parseInt(criteria.startYear);
+    const endYear = parseInt(criteria.endYear);
+    sql += ` AND ((year * 100 + month) >= ? AND (year * 100 + month) <= ?)`;
+    params.push(startYear * 100 + startMonth, endYear * 100 + endMonth);
+  }
+
+  // Get total count
+  let countSql = 'SELECT COUNT(*) as total FROM sales_records WHERE 1=1';
+  const countParams = [];
+  if (criteria.platform && criteria.platform !== 'All') {
+    countSql += ' AND platform = ?';
+    countParams.push(criteria.platform);
+  }
+  if (criteria.query) {
+    countSql += ` AND (platform_id LIKE ? OR bundle_id LIKE ? OR parent_ean LIKE ? OR product_name LIKE ?)`;
+    const term = `%${criteria.query}%`;
+    countParams.push(term, term, term, term);
+  }
+  if (criteria.bundleId && criteria.bundleId !== 'All') {
+    countSql += ' AND bundle_id = ?';
+    countParams.push(criteria.bundleId);
+  }
+  if (criteria.parentEan && criteria.parentEan !== 'All') {
+    countSql += ' AND parent_ean = ?';
+    countParams.push(criteria.parentEan);
+  }
+  if (criteria.month && criteria.month !== 'All') {
+    countSql += ' AND month = ?';
+    countParams.push(parseInt(criteria.month));
+  }
+  if (criteria.year && criteria.year !== 'All') {
+    countSql += ' AND year = ?';
+    countParams.push(parseInt(criteria.year));
+  }
+  if (criteria.startYear && criteria.endYear) {
+    const startMonth = parseInt(criteria.startMonth) || 1;
+    const endMonth = parseInt(criteria.endMonth) || 12;
+    const startYear = parseInt(criteria.startYear);
+    const endYear = parseInt(criteria.endYear);
+    countSql += ` AND ((year * 100 + month) >= ? AND (year * 100 + month) <= ?)`;
+    countParams.push(startYear * 100 + startMonth, endYear * 100 + endMonth);
+  }
+  sql += ' ORDER BY id DESC LIMIT ? OFFSET ?';
+  params.push(limit, (page - 1) * limit);
+  const total = runQuery(countSql, countParams)[0]?.total || 0;
+  const results = runQuery(sql, params).map(formatRecord);
+  return { results, total };
+}
 /**
  * Database Module - SQLite Setup using sql.js
  * Replaces Google Sheets with local SQLite database
@@ -99,23 +209,39 @@ function getPlatforms() {
 
 // ==================== Record Operations ====================
 function uploadRecords(platform, records) {
-  records.forEach(record => {
-    db.run(`
+  try {
+    db.run('BEGIN TRANSACTION');
+
+    const stmt = db.prepare(`
       INSERT INTO sales_records (platform, platform_id, bundle_id, parent_ean, product_name, shipped_units, month, year)
       VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-    `, [
-      platform,
-      record.platformId || '',
-      record.bundleId || '',
-      record.parentEan || '',
-      record.productName || '',
-      record.shippedUnits || 0,
-      record.month || new Date().getMonth() + 1,
-      record.year || new Date().getFullYear()
-    ]);
-  });
-  saveDatabase();
-  return { success: true, message: `Uploaded ${records.length} records to ${platform}` };
+    `);
+
+    records.forEach(record => {
+      stmt.run([
+        platform,
+        record.platformId || '',
+        record.bundleId || '',
+        record.parentEan || '',
+        record.productName || '',
+        record.shippedUnits || 0,
+        record.month || new Date().getMonth() + 1,
+        record.year || new Date().getFullYear()
+      ]);
+    });
+
+    stmt.free();
+    db.run('COMMIT');
+
+    // Save to disk after the bulk operation
+    saveDatabase();
+    return { success: true, message: `Uploaded ${records.length} records to ${platform}` };
+
+  } catch (error) {
+    db.run('ROLLBACK');
+    console.error('Upload failed:', error);
+    throw new Error('Database error during bulk upload: ' + error.message);
+  }
 }
 
 function formatRecord(row) {
@@ -272,14 +398,92 @@ function getFilterOptions() {
   return { platforms, bundleIds, parentEans, years, months };
 }
 
+// ==================== Admin Functions ====================
+function deleteByFilter(platform, month, year) {
+  let sql = 'DELETE FROM sales_records WHERE 1=1';
+  const params = [];
+
+  if (platform) {
+    sql += ' AND platform = ?';
+    params.push(platform);
+  }
+  if (month) {
+    sql += ' AND month = ?';
+    params.push(parseInt(month));
+  }
+  if (year) {
+    sql += ' AND year = ?';
+    params.push(parseInt(year));
+  }
+
+  // Get count before deleting
+  let countSql = sql.replace('DELETE FROM', 'SELECT COUNT(*) as count FROM');
+  const countResult = runQuery(countSql, params)[0] || { count: 0 };
+  const deletedCount = countResult.count;
+
+  // Perform deletion
+  db.run(sql, params);
+  saveDatabase();
+
+  return {
+    success: true,
+    message: `Successfully deleted ${deletedCount} records`,
+    deletedCount
+  };
+}
+
+function deleteAllRecords() {
+  const countResult = runQuery('SELECT COUNT(*) as count FROM sales_records')[0] || { count: 0 };
+  const deletedCount = countResult.count;
+
+  db.run('DELETE FROM sales_records');
+  saveDatabase();
+
+  return {
+    success: true,
+    message: `Successfully deleted all ${deletedCount} records`,
+    deletedCount
+  };
+}
+
+// Search with no pagination for delete preview
+function searchRecords(criteria) {
+  let sql = 'SELECT * FROM sales_records WHERE 1=1';
+  const params = [];
+
+  if (criteria.platform && criteria.platform !== 'All') {
+    sql += ' AND platform = ?';
+    params.push(criteria.platform);
+  }
+
+  if (criteria.month) {
+    sql += ' AND month = ?';
+    params.push(parseInt(criteria.month));
+  }
+
+  if (criteria.year) {
+    sql += ' AND year = ?';
+    params.push(parseInt(criteria.year));
+  }
+
+  sql += ' ORDER BY id DESC';
+  const results = runQuery(sql, params).map(formatRecord);
+  return { results, total: results.length };
+}
+
 module.exports = {
   initializeDatabase,
   getPlatforms,
   uploadRecords,
   getAllData,
   advancedSearch,
+  getAllDataPaginated,
+  advancedSearchPaginated,
   updateRecord,
   deleteRecord,
   getDashboardStats,
-  getFilterOptions
+  getFilterOptions,
+  deleteByFilter,
+  deleteAllRecords,
+  searchRecords
 };

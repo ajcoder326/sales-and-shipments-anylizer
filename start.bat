@@ -1,51 +1,135 @@
 @echo off
-title Kuber Industries - Sales Analyzer
-color 0A
+setlocal enabledelayedexpansion
+title Kuber Industries - Sales Data Analyzer
+mode con: cols=75 lines=30
+color 0B
 
+:: Change to script directory
+cd /d "%~dp0"
+
+cls
 echo.
-echo ========================================
-echo   Kuber Industries Sales Analyzer
-echo   Local Server Setup
-echo ========================================
+echo  ===========================================================================
+echo                     KUBER INDUSTRIES                                    
+echo                 SALES DATA ANALYZER                                     
+echo  ===========================================================================
 echo.
 
-:: Check if Node.js is installed
+:: Check Node.js
 where node >nul 2>nul
 if %ERRORLEVEL% neq 0 (
-    echo [ERROR] Node.js is not installed!
-    echo Please download and install Node.js from: https://nodejs.org/
-    echo.
+    color 0C
+    echo   [ERROR] Node.js is not installed!
+    echo   Please run setup_project.bat first.
     pause
     exit /b 1
 )
 
-:: Check if node_modules exists
+:: Check dependencies
 if not exist "node_modules" (
-    echo [INFO] Installing dependencies for the first time...
-    echo This may take a few minutes...
-    echo.
-    call npm install
-    echo.
-    echo [SUCCESS] Dependencies installed!
-    echo.
+    color 0E
+    echo   [SETUP] Installing dependencies...
+    call npm install --silent
 )
 
-echo [INFO] Starting the server...
-echo.
-echo ========================================
-echo   Server will start at:
-echo   http://localhost:3000
-echo.
-echo   To share via ngrok:
-echo   1. Open another terminal
-echo   2. Run: ngrok http 3000
-echo   3. Share the generated URL
-echo ========================================
-echo.
-echo Press Ctrl+C to stop the server
+:: Get Local IP Address
+echo   [NETWORK] Detecting local IP address...
+set LOCAL_IP=
+for /f "tokens=2 delims=:" %%a in ('ipconfig ^| findstr /C:"IPv4 Address"') do (
+    for /f "tokens=1" %%b in ("%%a") do (
+        if not defined LOCAL_IP set LOCAL_IP=%%b
+    )
+)
+
+:: Trim spaces from LOCAL_IP
+for /f "tokens=* delims= " %%a in ("!LOCAL_IP!") do set LOCAL_IP=%%a
+
+if not defined LOCAL_IP (
+    echo   [WARNING] Could not detect IP. Using localhost only.
+    set LOCAL_IP=localhost
+) else (
+    echo   [OK] Local IP: !LOCAL_IP!
+)
+
+:: Kill any existing processes
+echo   [CLEANUP] Stopping any existing services...
+for /f "tokens=5" %%a in ('netstat -aon ^| find ":3000" ^| find "LISTENING"') do (
+    taskkill /F /PID %%a >nul 2>nul
+)
+
+:: Start server in background
+echo   [STARTING] Initializing server...
+
+echo Set WshShell = CreateObject("WScript.Shell") > "%temp%\runhidden.vbs"
+echo WshShell.Run "cmd /c cd /d ""%~dp0"" && node server.js > server.log 2>&1", 0, False >> "%temp%\runhidden.vbs"
+cscript //nologo "%temp%\runhidden.vbs"
+
+:: Wait for server
+echo   [WAITING] Server is starting up...
+timeout /t 2 /nologo >nul
+
+:checkserver
+powershell -Command "(New-Object Net.Sockets.TcpClient).Connect('localhost', 3000)" 2>nul
+if %ERRORLEVEL% neq 0 (
+    timeout /t 1 /nologo >nul
+    goto checkserver
+)
+echo   [OK] Server is running!
 echo.
 
-:: Start the server
-node server.js
+:: Display final status
+color 0A
+cls
+echo.
+echo  ===========================================================================
+echo             SERVER RUNNING SUCCESSFULLY!                              
+echo  ===========================================================================
+echo.
+echo   THIS COMPUTER:
+echo   --------------
+echo      http://localhost:3000
+echo.
+echo  ---------------------------------------------------------------------------
+echo.
+echo   OFFICE NETWORK ACCESS (Share with colleagues on same WiFi):
+echo   ------------------------------------------------------------
+echo      http://!LOCAL_IP!:3000
+echo.
+echo   Share this URL with anyone on your office network!
+echo.
+echo  ---------------------------------------------------------------------------
+echo.
+echo   LOGIN:  admin / admin123
+echo.
+echo  ---------------------------------------------------------------------------
+echo.
+echo   Keep this window OPEN while using the application.
+echo   Press any key to STOP the server.
+echo.
+echo  ===========================================================================
+echo.
 
-pause
+:: Open browser
+echo   Opening browser...
+start http://localhost:3000
+
+echo.
+echo   Server is running. Press any key to stop...
+echo.
+pause >nul
+
+:: Cleanup
+echo.
+echo   [STOPPING] Shutting down server...
+
+for /f "tokens=5" %%a in ('netstat -aon ^| find ":3000" ^| find "LISTENING"') do (
+    taskkill /F /PID %%a >nul 2>nul
+)
+
+del "%temp%\runhidden.vbs" >nul 2>nul
+
+echo   [OK] Server stopped!
+echo.
+timeout /t 2 /nologo >nul
+endlocal
+exit
